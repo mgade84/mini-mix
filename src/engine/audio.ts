@@ -1,10 +1,12 @@
 /**
- * All sounds are synthesized with Web Audio — no files to download, zero latency.
+ * Sound effects are synthesized with Web Audio — no files to download, zero latency.
+ * Speech uses recorded clips where scripts/voice made them, else the device voice.
  * iOS only lets audio start inside a user gesture, so main.ts calls unlockAudio()
  * on every tap (it is a no-op once running).
  */
 import { load, save } from './storage';
-import { speechLang } from '../i18n';
+import { getLang, type Lang, speechLang } from '../i18n';
+import { clipKey } from './clipkey';
 
 let ac: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -278,11 +280,8 @@ function voiceFor(tag: string) {
   return v;
 }
 
-/** Speaks a short phrase in the selected language — helps kids who can't read yet. */
-export function say(text: string) {
-  if (muted || !('speechSynthesis' in window)) return;
-  const s = window.speechSynthesis;
-  s.cancel();
+function speak(text: string) {
+  if (!('speechSynthesis' in window)) return;
   const tag = speechLang();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = tag;
@@ -290,9 +289,76 @@ export function say(text: string) {
   u.pitch = 1.15;
   const v = voiceFor(tag);
   if (v) u.voice = v;
-  s.speak(u);
+  window.speechSynthesis.speak(u);
+}
+
+// Recorded clips (scripts/voice) for languages that many devices can't speak well:
+// Chrome on Linux, for one, has no Danish voice and reads Danish with an American accent.
+const CLIP_LANGS: Lang[] = ['da'];
+const clipSets = new Map<Lang, Set<string>>();
+const clipBuffers = new Map<string, Promise<AudioBuffer>>(); // most recently used last
+let clipSrc: AudioBufferSourceNode | null = null;
+let sayId = 0;
+
+function loadClipList(lang: Lang) {
+  if (!CLIP_LANGS.includes(lang) || clipSets.has(lang)) return;
+  clipSets.set(lang, new Set()); // fall back to the device voice until the list arrives
+  fetch(`voice/${lang}/phrases.json`)
+    .then((r) => r.json())
+    .then((t: Record<string, string>) => clipSets.set(lang, new Set(Object.keys(t))))
+    .catch(() => {});
+}
+loadClipList(getLang());
+
+function clipBuffer(ctx: AudioContext, url: string) {
+  let p = clipBuffers.get(url);
+  if (p) clipBuffers.delete(url);
+  else
+    p = fetch(url)
+      .then((r) => r.arrayBuffer())
+      // Callback form: older Safari has no promise-returning decodeAudioData.
+      .then((data) => new Promise<AudioBuffer>((res, rej) => ctx.decodeAudioData(data, res, rej)));
+  clipBuffers.set(url, p);
+  if (clipBuffers.size > 40) clipBuffers.delete(clipBuffers.keys().next().value!);
+  p.catch(() => clipBuffers.delete(url));
+  return p;
+}
+
+/** Speaks a short phrase in the selected language — helps kids who can't read yet. */
+export function say(text: string) {
+  if (muted) return;
+  stopSpeech();
+  const id = sayId;
+  const lang = getLang();
+  loadClipList(lang);
+  const key = clipKey(text);
+  const known = clipSets.get(lang)?.has(key);
+  if (known && ac && master && ac.state === 'running') {
+    const [ctx, out] = [ac, master];
+    clipBuffer(ctx, `voice/${lang}/${key}.mp3`).then(
+      (buf) => {
+        if (id !== sayId) return; // something newer was said meanwhile
+        const g = ctx.createGain();
+        g.gain.value = 1.6; // master is 0.6 for effects; speech should be near full volume
+        g.connect(out);
+        clipSrc = ctx.createBufferSource();
+        clipSrc.buffer = buf;
+        clipSrc.connect(g);
+        clipSrc.start();
+      },
+      () => id === sayId && speak(text),
+    );
+    return;
+  }
+  if (import.meta.env.DEV && !known && clipSets.get(lang)?.size) {
+    console.warn(`No recorded ${lang} clip for "${text}". Add it in scripts/voice/phrases.ts and run scripts/voice/build.sh.`);
+  }
+  speak(text);
 }
 
 export function stopSpeech() {
+  sayId++;
+  clipSrc?.stop();
+  clipSrc = null;
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 }

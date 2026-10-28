@@ -11,7 +11,7 @@ const en = {
   done: 'All sorted!',
   round: (n: number) => `Round ${n}`,
 };
-const M: Record<Lang, typeof en> = {
+export const M: Record<Lang, typeof en> = {
   en,
   da: {
     praise: ['Ja!', 'Flot!', 'Super!', 'Godt gået!'],
@@ -22,7 +22,7 @@ const M: Record<Lang, typeof en> = {
 
 type Kind = 'circle' | 'square' | 'triangle' | 'star' | 'heart' | 'diamond' | 'hexagon';
 
-const SHAPES: { kind: Kind; name: Txt; color: string }[] = [
+export const SHAPES: { kind: Kind; name: Txt; color: string }[] = [
   { kind: 'circle', name: { en: 'circle', da: 'cirkel' }, color: '#ff595e' },
   { kind: 'square', name: { en: 'square', da: 'firkant' }, color: '#1982c4' },
   { kind: 'triangle', name: { en: 'triangle', da: 'trekant' }, color: '#5bb318' },

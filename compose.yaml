@@ -25,6 +25,7 @@ services:
     build:
       context: .
       target: prod
+      pull: true # always build on the latest patched base images
     ports:
       - "${PORT:-8080}:80"
     restart: unless-stopped

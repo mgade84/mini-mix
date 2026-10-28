@@ -14,7 +14,7 @@ const en = {
   times: '×',
   divide: '÷',
 };
-const M: Record<Lang, typeof en> = {
+export const M: Record<Lang, typeof en> = {
   en,
   da: {
     level: 'Vælg et niveau',

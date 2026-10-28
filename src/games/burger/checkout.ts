@@ -4,7 +4,7 @@ import { changeCoins, COINS, coinRadius, drawCoin, Kitchen } from './art';
 import { Btn, drawMeal, drawTray, type Env, prompt, type Scene } from './core';
 import { money, S, spoken } from './strings';
 
-const MAX_PRICE = 50;
+export const MAX_PRICE = 50;
 
 /** Set the price of the meal on a swinging price tag. */
 export function priceScene(env: Env): Scene {

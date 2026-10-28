@@ -20,7 +20,7 @@ const en = {
   bannerNext: (icon: string, name: string) => `Next stop: ${icon} ${name}`,
   horn: 'Horn',
 };
-const M: Record<Lang, typeof en> = {
+export const M: Record<Lang, typeof en> = {
   en,
   da: {
     loadFirst: 'Læs alle varerne på først!',
@@ -46,7 +46,7 @@ const CTRL: [number, number][] = [
   [0.62, 0.92], [0.26, 0.9], [0.1, 0.64], [0.32, 0.46], [0.1, 0.28],
 ];
 
-const STATIONS = [
+export const STATIONS = [
   { name: { en: 'Farm', da: 'Bondegård' }, icon: '🏡', at: 0.08, cargo: ['🍎', '🥕', '🌽', '🥚', '🍓'] },
   { name: { en: 'Toy Shop', da: 'Legetøjsbutik' }, icon: '🏪', at: 0.41, cargo: ['🧸', '🪀', '🎈', '🪁', '⚽'] },
   { name: { en: 'Factory', da: 'Fabrik' }, icon: '🏭', at: 0.74, cargo: ['📦', '🪵', '🧱', '🔩', '🛢️'] },

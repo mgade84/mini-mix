@@ -48,7 +48,7 @@ function spoken(n: number) {
   return L({ en: n === 1 ? '1 dollar' : `${n} dollars`, da: n === 1 ? '1 krone' : `${n} kroner` });
 }
 
-const M: Record<Lang, typeof en> = {
+export const M: Record<Lang, typeof en> = {
   en,
   da: {
     burger: 'Burger',

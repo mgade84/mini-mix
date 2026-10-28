@@ -14,7 +14,7 @@ const en = {
   done: 'Super counting!',
   right: (n: number) => `${n} right answers`,
 };
-const M: Record<Lang, typeof en> = {
+export const M: Record<Lang, typeof en> = {
   en,
   da: {
     howMany: 'Hvor mange',
@@ -28,7 +28,7 @@ const M: Record<Lang, typeof en> = {
 
 // [emoji, singular, plural]
 type Word = Record<Lang, [string, string]>;
-const THINGS: [string, Word][] = [
+export const THINGS: [string, Word][] = [
   ['🍎', { en: ['apple', 'apples'], da: ['æble', 'æbler'] }],
   ['🍌', { en: ['banana', 'bananas'], da: ['banan', 'bananer'] }],
   ['🐞', { en: ['ladybug', 'ladybugs'], da: ['mariehøne', 'mariehøns'] }],

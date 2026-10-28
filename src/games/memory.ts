@@ -11,7 +11,7 @@ const en = {
   done: 'You found them all!',
   pairs: (n: number) => `${n} pairs`,
 };
-const M: Record<Lang, typeof en> = {
+export const M: Record<Lang, typeof en> = {
   en,
   da: {
     howMany: 'Hvor mange kort?',
@@ -20,7 +20,7 @@ const M: Record<Lang, typeof en> = {
   },
 };
 
-const ANIMALS: [string, Txt][] = [
+export const ANIMALS: [string, Txt][] = [
   ['🐶', { en: 'dog', da: 'hund' }], ['🐱', { en: 'cat', da: 'kat' }], ['🐭', { en: 'mouse', da: 'mus' }],
   ['🐰', { en: 'bunny', da: 'kanin' }], ['🦊', { en: 'fox', da: 'ræv' }], ['🐻', { en: 'bear', da: 'bjørn' }],
   ['🐼', { en: 'panda', da: 'panda' }], ['🐨', { en: 'koala', da: 'koala' }], ['🐯', { en: 'tiger', da: 'tiger' }],

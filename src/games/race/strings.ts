@@ -41,7 +41,7 @@ const en = {
   boards: ['MINI MIX RACEWAY', 'GRAND PRIX', 'FULL THROTTLE', 'SPEED ZONE', 'CHAMPIONS', 'BRAKE ▶'],
 };
 
-const M: Record<Lang, typeof en> = {
+export const M: Record<Lang, typeof en> = {
   en,
   da: {
     loading: 'Indlæser…',

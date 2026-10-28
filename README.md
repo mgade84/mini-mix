@@ -19,7 +19,7 @@ Games speak short prompts (Web Speech API) so non-readers can play.
 
 **Settings** (hold ⚙️ on the home menu for 3 seconds, so children don't open it by accident): language, sound on/off, the Save button in Magic Paint, reset stars, and *Refresh app* (clears the offline cache and reloads the newest version).
 
-**Languages:** English and Danish — pick it in ⚙️ Settings (defaults to the device language, remembered per device). Text and speech switch together; Danish uses the iPad's built-in Danish voice.
+**Languages:** English and Danish — pick it in ⚙️ Settings (defaults to the device language, remembered per device). Text and speech switch together. Danish speech is pre-recorded with Piper (a natural Danish voice, ~3 MB, cached for offline use), so it sounds right even on devices without a Danish voice; English uses the device's voice.
 
 ## Run it
 
@@ -49,7 +49,7 @@ After changing `package.json`: `docker compose --profile dev up --build -V`.
   - `stage.ts` – DPR-aware canvas (capped at 2×), rAF loop with clamped delta time, pauses when the tab is hidden, multi-touch pointer input.
   - `sprites.ts` – offscreen sprite cache; emoji, gradients and shapes are rendered once and blitted.
   - `particles.ts` – pooled particle system (no allocations per frame).
-  - `audio.ts` – all sound effects synthesized with Web Audio (no audio files), iOS unlock handling, speech.
+  - `audio.ts` – all sound effects synthesized with Web Audio (no audio files), iOS unlock handling, speech (recorded clips where available, else the Web Speech API).
 - **Grand Prix** uses Three.js (WebGL), loaded only when the game is opened (`src/games/race/`): procedural track, car models and cockpit, synthesized engine sound (rpm-driven oscillators + gearbox), arcade physics with optional steering/brake assist, AI opponents with rubber-banding.
 - Menu/HUD/overlays are plain DOM with transform/opacity-only CSS animations (GPU-composited).
 - iPad specifics: `touch-action: none`, pinch/double-tap zoom and long-press menus disabled, safe-area insets, opaque canvases, fullscreen PWA manifest + icons.
@@ -58,6 +58,20 @@ After changing `package.json`: `docker compose --profile dev up --build -V`.
 ## Translations
 
 `src/i18n.ts` holds the current language and `L()`. Each game keeps a small `{ en, da }` message table next to its code (e.g. `const M: Record<Lang, typeof en>`), so TypeScript flags any missing Danish string. Game titles are `{ en, da }` objects on the `GameDef`.
+
+### Danish speech clips
+
+Danish speech is one MP3 per phrase passed to `say()`, named by a hash of its text (`src/engine/clipkey.ts`), plus `phrases.json` listing them, all in `public/voice/da/`. These files are generated, not committed: the production build (`docker compose --profile prod up -d --build`) records them in the Dockerfile's `phrases` and `voice` stages, and Docker's build cache keeps earlier recordings, so only new or changed phrases are recorded (the first build takes a couple of minutes).
+
+For the dev server, generate them once (and again after changing spoken Danish text):
+
+```bash
+scripts/voice/build.sh   # writes public/voice/ (git-ignored); needs only Docker
+```
+
+Without the clips, Danish falls back to the device voice and the dev server logs a warning per phrase. When you add or change a spoken Danish phrase, also add it to `scripts/voice/phrases.ts`, which builds the list from the real string tables.
+
+The voice is Piper's `da_DK-talesyntese-medium` (Piper is MIT; the voice is trained on a CC0 dataset).
 
 ## Adding a game
 

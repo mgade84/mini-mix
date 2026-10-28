@@ -23,6 +23,8 @@ npm run build       # typecheck + vite build → dist/
 npm run dev
 ```
 
+`scripts/voice/build.sh` generates the recorded Danish speech into `public/voice/` for the dev server; it needs only Docker. The production image generates it itself.
+
 The project has no test suite and no linter. `npm run typecheck` is the main correctness check. The build targets `es2020`/`safari14` (iPadOS 14+ Safari), so don't use newer runtime APIs without a fallback.
 
 ## Architecture
@@ -34,7 +36,7 @@ The project has no test suite and no linter. `npm run typecheck` is the main cor
   - `sprites.ts`: `cached(key, w, h, draw)`. Pre-render emoji, gradients and shapes once, then blit them each frame.
   - `Particles`: a pooled particle system.
   - `Timers` (in `util.ts`): timers that advance with game time.
-  - `audio.ts`: every sound is synthesized with Web Audio; the project has no audio files. It also has `say()` for speech (Web Speech API, using the current language's voice) and handles iOS audio unlocking, which `main.ts` wires up globally.
+  - `audio.ts`: every sound effect is synthesized with Web Audio; there are no effect files. `say()` speaks Danish with clips generated at build time into `public/voice/da/` (played through the Web Audio graph, so mute applies) and otherwise uses the Web Speech API. It also handles iOS audio unlocking, which `main.ts` wires up globally.
 
   The hot render path should not allocate per frame.
 - **Multi-file games** keep each game in its own folder:
@@ -47,6 +49,7 @@ The project has no test suite and no linter. `npm run typecheck` is the main cor
 
 - **i18n**: supports English and Danish (`src/i18n.ts`). `Txt = Record<Lang, string>`, and `L(x)` picks the current language. Shell and menu strings live in `UI`. Each game keeps its own `{ en, da }` message table next to its code (for example `burger/strings.ts` and `race/strings.ts`), typed as `Record<Lang, typeof en>` so TypeScript flags any missing Danish string. Every new user-facing string, including spoken prompts, needs both languages.
 - **Non-readers**: games speak short prompts with `say()`, and gameplay must not depend on reading.
+- **Danish speech clips**: every Danish text passed to `say()` needs a clip. When you add or change one, extend `scripts/voice/phrases.ts` (it enumerates phrases from the exported string tables, including number and price ranges) Clips are generated at build time, never committed (`public/voice/` is git-ignored): the Dockerfile's `phrases` stage lists the phrases, the `voice` stage records them with Piper, with a BuildKit cache mount so only new texts get recorded, and the `build` stage copies them into `public/voice`. Clips are named by `clipKey(text)`, so any text change means a new recording. Changing the voice settings in `scripts/voice/generate.py` re-records everything. Missing clips fall back to the device voice and log a warning in dev.
 - **iPad/touch**: the page sets `touch-action: none`, blocks pinch-zoom and long-press menus, respects safe-area insets and uses opaque canvases. DOM UI (menu, HUD, overlays) animates with `transform` and `opacity` only, so the GPU can composite it. Support multi-touch through pointer ids.
 - **Grown-up gating**: the settings page opens only after holding ⚙️ on the menu for 3 seconds, so children don't open it by accident. Any new grown-up-only option belongs on that page.
 - **Bundle size**: the core app is about 22 KB of gzipped JS. Keep heavy dependencies out of the core chunk.
