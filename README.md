@@ -9,6 +9,7 @@ iPad-friendly web games for children aged 4–10. No ads, no network calls, no t
 | 🎹 Animal Piano | 4+ | Music: 8 keys, 3 instruments, slide for glissando, demo song |
 | 🚂 Choo-Choo Train | 4+ | Drive with a speed lever, auto-stop at stations, load cargo to continue, horn |
 | 🏎️ Grand Prix | 5+ | Realistic 3D first-person racing: pick a car, 2-lap race vs 3 rivals, optional driving assist |
+| 🦖 Dino World | 4+ | 3D dinosaur-park breakout in third person: pick a T-Rex, Triceratops, Stegosaurus, Brachiosaurus, the super-fast Spinoraptor or a Pteranodon (slow on foot; hold the jump button to fly), bite through the cage bars (the roar button turns into 🦷 near bars; 3 bites), smash 10 jeeps and scare off 10 visitors, and free 4 caged dinosaurs for bonus stars (joystick under your finger, jump onto cliffs, roar) |
 | 🚙 Cool Cars | 4+ | Real photos of 12 car models in a 4×3 grid; tap one and it zooms up, revs and says its brand and model |
 | 🍔 Burger Diner | 4–10 | Cook a meal in any order: stack a burger (10 ingredients), slice and fry fries, mix a soda; set the price, pay with coins (with change), then eat it |
 | 🔷 Shape Sorter | 4+ | Shapes & colors via drag-and-drop (later rounds: shape only) |
@@ -51,6 +52,7 @@ After changing `package.json`: `docker compose --profile dev up --build -V`.
   - `sprites.ts` – offscreen sprite cache; emoji, gradients and shapes are rendered once and blitted.
   - `particles.ts` – pooled particle system (no allocations per frame).
   - `audio.ts` – all sound effects synthesized with Web Audio (no audio files), iOS unlock handling, speech (recorded clips where available, else the Web Speech API).
+- **Dino World** also uses Three.js, loaded on demand (`src/games/dino/`): procedural low-poly dinosaurs with a shared walk/roar rig, an instanced jungle (one draw call per plant kind) with grid-based collisions, and a third-person chase camera.
 - **Grand Prix** uses Three.js (WebGL), loaded only when the game is opened (`src/games/race/`): procedural track, car models and cockpit, synthesized engine sound (rpm-driven oscillators + gearbox), arcade physics with optional steering/brake assist, AI opponents with rubber-banding.
 - Menu/HUD/overlays are plain DOM with transform/opacity-only CSS animations (GPU-composited).
 - iPad specifics: `touch-action: none`, pinch/double-tap zoom and long-press menus disabled, safe-area insets, opaque canvases, fullscreen PWA manifest + icons.

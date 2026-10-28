@@ -216,6 +216,45 @@ export const sfx = {
   whoosh() {
     voice('sine', 900, 0.15, 0.35, 0, 140);
   },
+  /** Dinosaur roar: a deep growl that swells and falls, with breath. `size` > 1 is deeper. */
+  roar(size = 1) {
+    voice('sawtooth', 120 / size, 0.2, 1.3, 0, 58 / size, 0.18);
+    voice('square', 90 / size, 0.1, 1.2, 0.03, 46 / size, 0.15);
+    voice('sawtooth', 240 / size, 0.06, 0.9, 0.05, 110 / size, 0.2);
+    noise(1.2, 0.22, 'lowpass', 800);
+  },
+  /** One beat of big leathery wings. */
+  flap() {
+    noise(0.22, 0.12, 'lowpass', 500);
+  },
+  /** Big jaws snapping shut. */
+  chomp() {
+    noise(0.12, 0.3, 'bandpass', 900);
+    voice('square', 140, 0.12, 0.12, 0.16, 70);
+  },
+  /** Metal bars taking a hit. */
+  clang() {
+    voice('square', 520, 0.08, 0.5, 0, 470);
+    voice('triangle', 1240, 0.08, 0.6, 0, 1180);
+    noise(0.12, 0.25, 'highpass', 2500);
+  },
+  /** A car getting smashed: a bang, crunching metal and tinkling glass. */
+  crash() {
+    noise(0.5, 0.45, 'lowpass', 700);
+    voice('sine', 80, 0.35, 0.4, 0, 40);
+    for (let i = 0; i < 4; i++) voice('triangle', 1800 + Math.random() * 1500, 0.05, 0.15, 0.1 + i * 0.07);
+  },
+  /** A startled "eek!" */
+  scream() {
+    const f = 700 + Math.random() * 300;
+    voice('sine', f, 0.12, 0.45, 0, f * 1.6, 0.02);
+    voice('triangle', f * 1.5, 0.05, 0.4, 0.02, f * 2.2, 0.02);
+  },
+  /** A soft footstep, for big animals. */
+  step(size = 1) {
+    noise(0.18, 0.12 * size, 'lowpass', 160);
+    voice('sine', 70, 0.12 * size, 0.16, 0, 45);
+  },
   /** Engine revving: two short blips, then a long rising growl. */
   vroom() {
     voice('sawtooth', 70, 0.1, 0.22, 0, 150);
