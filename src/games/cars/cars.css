@@ -1,0 +1,146 @@
+/* Cool Cars: a 4×3 grid of photo cards (3×4 in portrait) and the zoomed-in "show" layer. */
+.cars {
+  position: absolute;
+  inset: 0;
+  padding: calc(var(--top) + 8px) max(14px, var(--sar)) max(14px, var(--sab)) max(14px, var(--sal));
+  background: linear-gradient(180deg, #8ecae6, #cde8f6);
+}
+
+.cars-grid {
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: clamp(8px, 1.5vw, 16px);
+}
+
+@media (orientation: portrait) {
+  .cars-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(4, minmax(0, 1fr));
+  }
+
+  .cars-grid .car-name {
+    font-size: clamp(14px, 2.2vw, 22px);
+  }
+}
+
+.car-card,
+.car-hero-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #fff;
+}
+
+.car-card {
+  border-radius: 20px;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.15);
+  transition: transform 0.12s;
+}
+
+.car-card:active {
+  transform: scale(0.96);
+}
+
+.car-card.out {
+  visibility: hidden;
+}
+
+.car-card img,
+.car-hero-card img {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.car-name {
+  flex: none;
+  padding: 6px 10px 8px;
+  font: 900 clamp(13px, 1.6vw, 20px) / 1.15 var(--font);
+  color: var(--ink);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.car-star {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-style: normal;
+  font-size: clamp(20px, 2.4vw, 30px);
+  opacity: 0;
+  transform: scale(0);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+}
+
+.car-card.seen .car-star {
+  opacity: 1;
+  transform: none;
+}
+
+/* Below the HUD (z-index 5), so the home button keeps working. */
+.car-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+}
+
+.car-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 24, 40, 0.6);
+}
+
+.car-lines {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.car-lines.on {
+  opacity: 1;
+}
+
+.car-lines i {
+  position: absolute;
+  left: 100%;
+  width: 30%;
+  height: 5px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.95), transparent);
+  animation: car-streak 0.5s linear infinite;
+}
+
+@keyframes car-streak {
+  to {
+    transform: translateX(-450%);
+  }
+}
+
+.car-hero {
+  position: absolute;
+}
+
+.car-hero-card {
+  width: 100%;
+  height: 100%;
+  border-radius: 30px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+.car-hero .car-name {
+  padding: 10px 16px 14px;
+  font-size: clamp(26px, 4.5vw, 54px);
+}

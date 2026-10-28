@@ -1,8 +1,9 @@
 import { isMuted, setMuted, sfx } from './engine/audio';
 import { getPaintSave, getTotalStars, resetTotalStars, setPaintSave } from './engine/storage';
 import { getLang, L, LANGS, setLang, UI } from './i18n';
+import { CARS, carName } from './games/cars/cars';
 
-/** Grown-up settings page: language, sound, Paint saving and an app refresh. */
+/** Grown-up settings page: language, sound, Paint saving, an app refresh and photo credits. */
 export function mountSettings(app: HTMLElement, onBack: () => void, onLangChange: () => void): () => void {
   const el = document.createElement('div');
   el.className = 'menu settings';
@@ -39,6 +40,14 @@ export function mountSettings(app: HTMLElement, onBack: () => void, onLangChange
       <section class="setting">
         <div class="setting-text"><b>🔄 ${t.app}</b><small>${t.refreshHint}</small></div>
         <button class="action-btn refresh">${t.refresh}</button>
+      </section>
+      <section class="setting credits">
+        <details>
+          <summary class="setting-text"><b>📷 ${t.photoCredits}</b><small>${t.photoCreditsHint}</small></summary>
+          <ul class="credit-list">
+            ${CARS.map((c) => `<li><b>${carName(c)}</b>: ${c.credit.author}, <a href="${c.credit.url}" target="_blank" rel="noopener">${c.credit.license}</a></li>`).join('')}
+          </ul>
+        </details>
       </section>
     </main>`;
   app.appendChild(el);

@@ -47,6 +47,8 @@ const en = {
   starsHint: (n: number) => `Collected so far: ${n} ⭐`,
   resetStars: 'Reset stars',
   sure: 'Tap again to reset',
+  photoCredits: 'Photo credits',
+  photoCreditsHint: 'Car photos from Wikimedia Commons, cropped and resized. Tap to see who took them.',
 };
 
 /** Shell and menu strings. Games keep their own tables next to their code. */
@@ -72,5 +74,7 @@ export const UI: Record<Lang, typeof en> = {
     starsHint: (n: number) => `Samlet indtil nu: ${n} ⭐`,
     resetStars: 'Nulstil stjerner',
     sure: 'Tryk igen for at nulstille',
+    photoCredits: 'Fotokreditering',
+    photoCreditsHint: 'Bilfotos fra Wikimedia Commons, beskåret og skaleret. Tryk for at se, hvem der tog dem.',
   },
 };

@@ -16,6 +16,8 @@ import { M as train, STATIONS } from '../../src/games/train';
 import { M as race } from '../../src/games/race/strings';
 import { M as burger, spoken } from '../../src/games/burger/strings';
 import { MAX_PRICE } from '../../src/games/burger/checkout';
+import { M as cars } from '../../src/games/cars';
+import { CARS, carSpoken } from '../../src/games/cars/cars';
 
 setLang('da'); // some helpers, like spoken(), read the current language
 
@@ -24,7 +26,7 @@ const add = (...texts: string[]) => texts.forEach((t) => out.add(t));
 const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
 
 // Shell: celebrate() speaks its title.
-add(UI.da.greatJob, counting.da.done, memory.da.done, shapes.da.done, math.da.done, train.da.done, burger.da.end);
+add(UI.da.greatJob, cars.da.done, counting.da.done, memory.da.done, shapes.da.done, math.da.done, train.da.done, burger.da.end);
 
 // Count It!: the question, each number as it is counted (max 10 items), the answer.
 for (const [, w] of THINGS) {
@@ -41,6 +43,8 @@ add(...math.da.praise);
 const t = train.da;
 add(t.loadFirst, t.waitDelivery, t.allAboard, t.welcome + t.loadCargo, t.loadCargo);
 for (const st of STATIONS) add(`${st.name.da}!`, `${st.name.da}! ${t.loadCargo}`);
+
+add(...CARS.map((c) => carSpoken(c).da));
 
 add(race.da.win, ...range(2, 4).map(race.da.finished)); // 1st place says win
 

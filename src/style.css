@@ -797,6 +797,34 @@ button {
   box-shadow: 0 5px 0 #a3a8b5;
 }
 
+.setting.credits details {
+  width: 100%;
+}
+
+.setting.credits summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.setting.credits summary::-webkit-details-marker {
+  display: none;
+}
+
+.credit-list {
+  margin: 12px 0 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(43, 45, 66, 0.75);
+}
+
+.credit-list a {
+  color: #2563c9;
+}
+
 /* Hold-to-open settings button: a ring fills up over 3 seconds. */
 .settings-btn {
   position: relative;

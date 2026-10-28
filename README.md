@@ -4,11 +4,12 @@ iPad-friendly web games for children aged 4–10. No ads, no network calls, no t
 
 | Game | Age | What it practises |
 | --- | --- | --- |
-| 🫧 Bubble Pop | 4+ | Tapping/swiping, cause & effect (multi-touch) |
+| 🫧 Bubble Pop | 4+ | Tapping/swiping, cause & effect (multi-touch); collect the 3 animals shown in the corner from the bubbles |
 | 🎨 Magic Paint | 4+ | Free drawing: crayon, rainbow, glitter, stamps, eraser, save/share |
 | 🎹 Animal Piano | 4+ | Music: 8 keys, 3 instruments, slide for glissando, demo song |
 | 🚂 Choo-Choo Train | 4+ | Drive with a speed lever, auto-stop at stations, load cargo to continue, horn |
 | 🏎️ Grand Prix | 5+ | Realistic 3D first-person racing: pick a car, 2-lap race vs 3 rivals, optional driving assist |
+| 🚙 Cool Cars | 4+ | Real photos of 12 car models in a 4×3 grid; tap one and it zooms up, revs and says its brand and model |
 | 🍔 Burger Diner | 4–10 | Cook a meal in any order: stack a burger (10 ingredients), slice and fry fries, mix a soda; set the price, pay with coins (with change), then eat it |
 | 🔷 Shape Sorter | 4+ | Shapes & colors via drag-and-drop (later rounds: shape only) |
 | 🔢 Count It! | 4–6 | Counting 1–10 with spoken numbers and "count together" help |
@@ -19,7 +20,7 @@ Games speak short prompts (Web Speech API) so non-readers can play.
 
 **Settings** (hold ⚙️ on the home menu for 3 seconds, so children don't open it by accident): language, sound on/off, the Save button in Magic Paint, reset stars, and *Refresh app* (clears the offline cache and reloads the newest version).
 
-**Languages:** English and Danish — pick it in ⚙️ Settings (defaults to the device language, remembered per device). Text and speech switch together. Danish speech is pre-recorded with Piper (a natural Danish voice, ~3 MB, cached for offline use), so it sounds right even on devices without a Danish voice; English uses the device's voice.
+**Languages:** English and Danish — pick it in ⚙️ Settings (defaults to the device language, remembered per device). Text and speech switch together. Car photos in Cool Cars are from Wikimedia Commons (CC BY / CC BY-SA); the photographers are credited in ⚙️ Settings and in `src/games/cars/cars.ts`. Danish speech is pre-recorded with Piper (a natural Danish voice, ~3 MB, cached for offline use), so it sounds right even on devices without a Danish voice; English uses the device's voice.
 
 ## Run it
 

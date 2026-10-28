@@ -216,6 +216,14 @@ export const sfx = {
   whoosh() {
     voice('sine', 900, 0.15, 0.35, 0, 140);
   },
+  /** Engine revving: two short blips, then a long rising growl. */
+  vroom() {
+    voice('sawtooth', 70, 0.1, 0.22, 0, 150);
+    voice('sawtooth', 75, 0.1, 0.22, 0.26, 170);
+    voice('sawtooth', 80, 0.12, 1.1, 0.55, 330);
+    voice('square', 40, 0.06, 1.1, 0.55, 165);
+    noise(1, 0.07, 'lowpass', 600, 0.55);
+  },
   thud() {
     noise(0.35, 0.35, 'lowpass', 220);
     voice('sine', 90, 0.3, 0.25, 0, 50);

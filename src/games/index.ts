@@ -9,6 +9,7 @@ import { math } from './math';
 import { train } from './train';
 import { race } from './race';
 import { burger } from './burger';
+import { cars } from './cars';
 
 /** Menu order. To add a game: create a GameDef module and list it here. */
-export const games: GameDef[] = [bubbles, paint, piano, train, race, burger, shapes, counting, memory, math];
+export const games: GameDef[] = [bubbles, paint, piano, train, race, cars, burger, shapes, counting, memory, math];
