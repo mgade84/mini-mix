@@ -3,7 +3,7 @@ import { Stage } from '../engine/stage';
 import { Particles } from '../engine/particles';
 import { sfx } from '../engine/audio';
 import { cached, drawEmoji } from '../engine/sprites';
-import { clamp, easeOutBack, hexA, pick, rand, TAU } from '../engine/util';
+import { clamp, easeOutBack, easeOutCubic, hexA, pick, rand, randInt, roundRect, shuffle, TAU } from '../engine/util';
 
 const COLORS = ['#ff5d8f', '#4cc9f0', '#80ed99', '#ffd166', '#b388ff', '#ff9f1c'];
 const CRITTERS = ['🐟', '🐸', '🐥', '🦋', '🐞', '🐠', '🐙', '🦀', '🐳', '🐝'];
@@ -17,6 +17,19 @@ interface Bubble {
 interface Floater {
   x: number; y: number; vy: number; life: number; ch: string; size: number;
 }
+
+/** A slot in the collector (bottom right): fills up as `need` of its animal fly in. */
+interface Slot {
+  ch: string; need: number; have: number; coming: number; bounce: number;
+}
+
+/** An animal on its way from a popped bubble to its slot. */
+interface Flyer {
+  ch: string; slot: number; x0: number; y0: number; size0: number; t: number;
+}
+
+const COLLECT = 3;
+const FLY_TIME = 0.85;
 
 function bubbleSprite(color: string) {
   return cached('bubble:' + color, 160, 160, (c) => {
@@ -58,6 +71,30 @@ export const bubbles: GameDef = {
     let spawnIn = 0;
     let time = 0;
     let pops = 0;
+    let alive = true;
+    let slots: Slot[] = [];
+    const flyers: Flyer[] = [];
+
+    function newRound() {
+      slots = shuffle([...CRITTERS]).slice(0, COLLECT).map((ch) => ({ ch, need: randInt(2, 5), have: 0, coming: 0, bounce: 0 }));
+    }
+    newRound();
+
+    const wanted = (s: Slot) => s.have + s.coming < s.need;
+
+    /** Collector layout: a row of slots in the bottom-right corner, with progress dots below each. */
+    function collector() {
+      const size = 62 * scale();
+      const gap = 10 * scale();
+      const pad = 12 * scale();
+      const dots = 16 * scale();
+      const w = COLLECT * size + (COLLECT - 1) * gap + pad * 2;
+      const h = size + dots + pad * 2;
+      const x = stage.width - w - 16;
+      const y = stage.height - h - 16;
+      const slot = (i: number) => ({ x: x + pad + i * (size + gap) + size / 2, y: y + pad + size / 2 });
+      return { x, y, w, h, size, dots, slot };
+    }
 
     const scale = () => clamp(Math.min(stage.width, stage.height) / 800, 0.6, 1.4);
     stage.onResize(() => (bg = null));
@@ -74,12 +111,18 @@ export const bubbles: GameDef = {
         phase: rand(0, TAU),
         wob: rand(8, 26),
         color: golden ? '#ffd166' : pick(COLORS),
-        critter: !golden && !small && Math.random() < 0.3 ? pick(CRITTERS) : null,
+        critter: !golden && !small && Math.random() < 0.3 ? pickCritter() : null,
         golden,
         age: 0,
       };
       list.push(b);
       return b;
+    }
+
+    /** Mostly animals still missing from the collector, so a round doesn't drag on. */
+    function pickCritter() {
+      const missing = slots.filter(wanted);
+      return missing.length && Math.random() < 0.55 ? pick(missing).ch : pick(CRITTERS);
     }
 
     const bubbleX = (b: Bubble) => b.bx + Math.sin(time * 1.4 + b.phase) * b.wob;
@@ -91,7 +134,12 @@ export const bubbles: GameDef = {
       fx.ring(x, b.y, '#ffffff', b.r);
       fx.burst(x, b.y, { count: 14, color: [b.color, '#ffffff'], speed: 280 * scale(), size: 5 * scale(), gravity: 500, life: 0.7 });
       sfx.pop(clamp(50 / b.r, 0.6, 1.8));
-      if (b.critter) floaters.push({ x, y: b.y, vy: -220, life: 1, ch: b.critter, size: b.r });
+      const slot = slots.findIndex((s) => s.ch === b.critter && wanted(s));
+      if (slot >= 0) {
+        slots[slot].coming++;
+        flyers.push({ ch: b.critter!, slot, x0: x, y0: b.y, size0: b.r, t: 0 });
+        sfx.whoosh();
+      } else if (b.critter) floaters.push({ x, y: b.y, vy: -220, life: 1, ch: b.critter, size: b.r });
       if (b.golden) {
         sfx.good();
         fx.burst(x, b.y, { count: 30, kind: 'star', speed: 420, size: 12, life: 1.2, gravity: 200 });
@@ -132,6 +180,43 @@ export const bubbles: GameDef = {
       up: (_x, _y, id) => pressed.delete(id),
     });
 
+    function land(i: number) {
+      const s = slots[i];
+      s.coming--;
+      s.have++;
+      s.bounce = 1;
+      const p = collector().slot(i);
+      fx.burst(p.x, p.y, { count: 16, kind: 'star', speed: 260 * scale(), size: 9 * scale(), life: 0.8, gravity: 300 });
+      if (s.have < s.need) {
+        sfx.pop(1.5);
+        return;
+      }
+      sfx.good();
+      ctx.addStars(1);
+      if (slots.some((x) => x.have < x.need)) return;
+      const found = slots.map((x) => `${x.need} ${x.ch}`).join('  ');
+      setTimeout(async () => {
+        if (!alive) return;
+        await ctx.celebrate(undefined, found, COLLECT);
+        if (alive) newRound();
+      }, 700);
+    }
+
+    /** Position along the flight: an arc up and over into the slot, shrinking to fit. */
+    function flyerPos(f: Flyer) {
+      const to = collector().slot(f.slot);
+      const k = easeOutCubic(clamp(f.t, 0, 1));
+      const cx = (f.x0 + to.x) / 2;
+      const cy = Math.min(f.y0, to.y) - 160 * scale();
+      const u = 1 - k;
+      return {
+        x: u * u * f.x0 + 2 * u * k * cx + k * k * to.x,
+        y: u * u * f.y0 + 2 * u * k * cy + k * k * to.y,
+        size: f.size0 + (collector().size * 0.78 - f.size0) * k,
+        spin: Math.sin(k * Math.PI) * 0.6,
+      };
+    }
+
     for (let i = 0; i < 7; i++) spawn(undefined, rand(stage.height * 0.35, stage.height)).age = 1;
 
     stage.start((dt) => {
@@ -162,6 +247,14 @@ export const bubbles: GameDef = {
         f.life -= dt * 0.9;
         if (f.life <= 0) floaters.splice(i, 1);
       }
+      for (let i = flyers.length - 1; i >= 0; i--) {
+        const f = flyers[i];
+        f.t += dt / FLY_TIME;
+        if (f.t < 1) continue;
+        flyers.splice(i, 1);
+        land(f.slot);
+      }
+      for (const s of slots) s.bounce = Math.max(0, s.bounce - dt * 2.2);
       fx.update(dt);
 
       const c = stage.ctx;
@@ -188,9 +281,45 @@ export const bubbles: GameDef = {
         drawEmoji(c, f.ch, f.x, f.y, f.size);
       }
       c.globalAlpha = 1;
+
+      // Collector: faint targets until each animal arrives.
+      const col = collector();
+      c.fillStyle = 'rgba(255,255,255,0.85)';
+      roundRect(c, col.x, col.y, col.w, col.h, col.size * 0.42);
+      c.fill();
+      slots.forEach((s, i) => {
+        const p = col.slot(i);
+        c.fillStyle = s.have >= s.need ? '#fff3c4' : 'rgba(59,111,214,0.12)';
+        c.beginPath();
+        c.arc(p.x, p.y, col.size / 2, 0, TAU);
+        c.fill();
+        c.globalAlpha = s.have ? 1 : 0.28;
+        drawEmoji(c, s.ch, p.x, p.y, col.size * 0.78 * (1 + Math.sin(s.bounce * Math.PI) * 0.35));
+        c.globalAlpha = 1;
+        // One dot per animal needed; caught ones are filled.
+        const r = Math.min(col.dots * 0.28, col.size / (s.need * 2.6));
+        const step = r * 2.6;
+        for (let k = 0; k < s.need; k++) {
+          c.fillStyle = k < s.have ? '#ff9f1c' : 'rgba(59,111,214,0.22)';
+          c.beginPath();
+          c.arc(p.x + (k - (s.need - 1) / 2) * step, p.y + col.size / 2 + col.dots * 0.55, r, 0, TAU);
+          c.fill();
+        }
+      });
+      for (const f of flyers) {
+        const p = flyerPos(f);
+        c.save();
+        c.translate(p.x, p.y);
+        c.rotate(p.spin);
+        drawEmoji(c, f.ch, 0, 0, p.size);
+        c.restore();
+      }
       fx.draw(c, stage.dpr);
     });
 
-    return () => stage.destroy();
+    return () => {
+      alive = false;
+      stage.destroy();
+    };
   },
 };
