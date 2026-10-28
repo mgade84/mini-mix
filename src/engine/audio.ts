@@ -1,0 +1,298 @@
+/**
+ * All sounds are synthesized with Web Audio — no files to download, zero latency.
+ * iOS only lets audio start inside a user gesture, so main.ts calls unlockAudio()
+ * on every tap (it is a no-op once running).
+ */
+import { load, save } from './storage';
+import { speechLang } from '../i18n';
+
+let ac: AudioContext | null = null;
+let master: GainNode | null = null;
+let muted = load('muted', false);
+
+export function unlockAudio() {
+  if (!ac) {
+    const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AC) return;
+    // Safari 17+: play even when the device is in silent mode.
+    const nav = navigator as Navigator & { audioSession?: { type: string } };
+    if (nav.audioSession) nav.audioSession.type = 'playback';
+    ac = new AC();
+    master = ac.createGain();
+    master.gain.value = muted ? 0 : 0.6;
+    master.connect(ac.destination);
+  }
+  if (ac.state !== 'running') ac.resume().catch(() => {});
+}
+
+/** Raw audio graph for games that build their own continuous sounds (e.g. engines). */
+export function audioOut(): { ac: AudioContext; out: GainNode } | null {
+  return ac && master && ac.state === 'running' ? { ac, out: master } : null;
+}
+
+export function isMuted() {
+  return muted;
+}
+
+export function setMuted(m: boolean) {
+  muted = m;
+  save('muted', m);
+  if (master) master.gain.value = m ? 0 : 0.6;
+  if (m) stopSpeech();
+}
+
+function voice(
+  type: OscillatorType,
+  freq: number,
+  vol: number,
+  decay: number,
+  when = 0,
+  slideTo?: number,
+  attack = 0.008,
+) {
+  if (!ac || !master || muted || ac.state !== 'running') return;
+  const t = ac.currentTime + when;
+  const o = ac.createOscillator();
+  const g = ac.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + decay);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+  o.connect(g);
+  g.connect(master);
+  o.start(t);
+  o.stop(t + decay + 0.05);
+}
+
+let noiseBuf: AudioBuffer | null = null;
+
+function noiseBuffer(a: AudioContext) {
+  if (!noiseBuf) {
+    noiseBuf = a.createBuffer(1, a.sampleRate, a.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  return noiseBuf;
+}
+
+function noise(dur: number, vol: number, type: BiquadFilterType, freq: number, when = 0) {
+  if (!ac || !master || muted || ac.state !== 'running') return;
+  const t = ac.currentTime + when;
+  const src = ac.createBufferSource();
+  src.buffer = noiseBuffer(ac);
+  const f = ac.createBiquadFilter();
+  f.type = type;
+  f.frequency.value = freq;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(f);
+  f.connect(g);
+  g.connect(master);
+  src.start(t);
+  src.stop(t + dur + 0.05);
+}
+
+/** Train horn chord that sounds while held. Returns a stop function. */
+export function hornStart(): () => void {
+  const a = ac;
+  if (!a || !master || muted || a.state !== 'running') return () => {};
+  const t = a.currentTime;
+  const f = a.createBiquadFilter();
+  f.type = 'lowpass';
+  f.frequency.value = 1400;
+  const g = a.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.16, t + 0.05);
+  f.connect(g);
+  g.connect(master);
+  const oscs = [277.18, 349.23, 415.3].map((fr) => {
+    const o = a.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.value = fr;
+    o.connect(f);
+    o.start(t);
+    return o;
+  });
+  let stopped = false;
+  return () => {
+    if (stopped) return;
+    stopped = true;
+    const end = Math.max(a.currentTime, t + 0.35); // always at least a short toot
+    g.gain.setValueAtTime(0.16, end);
+    g.gain.exponentialRampToValueAtTime(0.0001, end + 0.2);
+    for (const o of oscs) o.stop(end + 0.25);
+  };
+}
+
+export interface NoiseLoop {
+  /** Fades to a volume (0 = silent) and optionally retunes the filter. */
+  set(vol: number, freq?: number): void;
+  stop(): void;
+}
+
+/** Continuous filtered noise, e.g. a fryer sizzle or a soda pour. Starts silent. */
+export function noiseLoop(type: BiquadFilterType, freq: number, q = 1): NoiseLoop {
+  const a = ac;
+  if (!a || !master || a.state !== 'running') return { set() {}, stop() {} };
+  const src = a.createBufferSource();
+  src.buffer = noiseBuffer(a);
+  src.loop = true;
+  const f = a.createBiquadFilter();
+  f.type = type;
+  f.frequency.value = freq;
+  f.Q.value = q;
+  const g = a.createGain();
+  g.gain.value = 0;
+  src.connect(f);
+  f.connect(g);
+  g.connect(master);
+  src.start();
+  let stopped = false;
+  return {
+    set(vol, fr) {
+      if (stopped) return;
+      g.gain.setTargetAtTime(vol, a.currentTime, 0.04);
+      if (fr) f.frequency.setTargetAtTime(fr, a.currentTime, 0.05);
+    },
+    stop() {
+      if (stopped) return;
+      stopped = true;
+      g.gain.setTargetAtTime(0, a.currentTime, 0.05);
+      src.stop(a.currentTime + 0.4);
+    },
+  };
+}
+
+export type Instrument = 'piano' | 'bells' | 'robot';
+
+export function playNote(freq: number, inst: Instrument = 'piano', vol = 0.35) {
+  switch (inst) {
+    case 'piano':
+      voice('triangle', freq, vol, 1.3);
+      voice('sine', freq * 2, vol * 0.25, 0.7);
+      break;
+    case 'bells':
+      voice('sine', freq * 2, vol, 0.9);
+      voice('sine', freq * 6, vol * 0.12, 0.12);
+      break;
+    case 'robot':
+      voice('square', freq, vol * 0.3, 0.35);
+      voice('square', freq * 1.005, vol * 0.2, 0.35);
+      break;
+  }
+}
+
+export const sfx = {
+  pop(pitch = 1) {
+    voice('sine', 520 * pitch, 0.4, 0.13, 0, 1300 * pitch, 0.003);
+  },
+  tap() {
+    voice('triangle', 880, 0.18, 0.07);
+  },
+  flip() {
+    voice('triangle', 480, 0.15, 0.08, 0, 760);
+  },
+  good() {
+    [523.25, 659.25, 783.99].forEach((f, i) => voice('triangle', f, 0.28, 0.25, i * 0.07));
+  },
+  win() {
+    [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5].forEach((f, i) =>
+      voice('triangle', f, 0.3, i === 5 ? 0.7 : 0.22, i * 0.11),
+    );
+  },
+  /** Gentle "not quite" — never harsh, these are small kids. */
+  oops() {
+    voice('sine', 330, 0.22, 0.28, 0, 220);
+  },
+  boing() {
+    voice('sine', 180, 0.3, 0.35, 0, 420);
+  },
+  whoosh() {
+    voice('sine', 900, 0.15, 0.35, 0, 140);
+  },
+  thud() {
+    noise(0.35, 0.35, 'lowpass', 220);
+    voice('sine', 90, 0.3, 0.25, 0, 50);
+  },
+  beep(high = false) {
+    voice('square', high ? 880 : 440, 0.12, high ? 0.6 : 0.25);
+  },
+  chuff() {
+    noise(0.12, 0.1, 'bandpass', 700);
+  },
+  hiss() {
+    noise(0.7, 0.1, 'highpass', 3000);
+  },
+  snap() {
+    voice('triangle', 660, 0.25, 0.1);
+    voice('triangle', 990, 0.2, 0.15, 0.05);
+  },
+  /** Knife through a potato onto a wooden board. */
+  chop() {
+    noise(0.06, 0.3, 'highpass', 2500);
+    noise(0.12, 0.4, 'lowpass', 500, 0.03);
+    voice('sine', 150, 0.25, 0.1, 0.03, 80);
+  },
+  splat() {
+    noise(0.14, 0.28, 'lowpass', 700);
+    voice('sine', 200, 0.2, 0.14, 0, 110);
+  },
+  clink(pitch = 1) {
+    voice('sine', 2300 * pitch, 0.16, 0.3);
+    voice('sine', 3450 * pitch, 0.08, 0.18, 0.015);
+  },
+  /** Cash register: drawer rattle and two bells. */
+  chaching() {
+    noise(0.25, 0.25, 'bandpass', 1400);
+    voice('sine', 1568, 0.25, 0.7, 0.08);
+    voice('sine', 2093, 0.25, 0.9, 0.18);
+  },
+  crunch() {
+    for (let i = 0; i < 3; i++) noise(0.05, 0.3, 'bandpass', 1500 + Math.random() * 1500, i * 0.06);
+    noise(0.1, 0.3, 'lowpass', 400);
+  },
+  slurp(long = false) {
+    noise(long ? 0.8 : 0.35, 0.22, 'bandpass', 900);
+    voice('sine', 280, 0.08, long ? 0.8 : 0.32, 0, 640);
+  },
+};
+
+const voiceCache = new Map<string, SpeechSynthesisVoice | null>();
+
+/** Best local voice for a BCP-47 tag like 'da-DK'. iPads ship 'Sara' (da) and 'Samantha' (en). */
+function voiceFor(tag: string) {
+  if (voiceCache.has(tag)) return voiceCache.get(tag)!;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null; // not loaded yet; try again next time
+  const base = tag.slice(0, 2);
+  const v =
+    voices.find((x) => x.lang.replace('_', '-') === tag && x.localService) ??
+    voices.find((x) => x.lang.replace('_', '-') === tag) ??
+    voices.find((x) => x.lang.startsWith(base)) ??
+    null;
+  voiceCache.set(tag, v);
+  return v;
+}
+
+/** Speaks a short phrase in the selected language — helps kids who can't read yet. */
+export function say(text: string) {
+  if (muted || !('speechSynthesis' in window)) return;
+  const s = window.speechSynthesis;
+  s.cancel();
+  const tag = speechLang();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = tag;
+  u.rate = 0.95;
+  u.pitch = 1.15;
+  const v = voiceFor(tag);
+  if (v) u.voice = v;
+  s.speak(u);
+}
+
+export function stopSpeech() {
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+}
