@@ -1,5 +1,5 @@
 // Offline support: the app shell is network-first, hashed assets are cache-first.
-const CACHE = 'minimix-v1';
+const CACHE = 'minimix-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
