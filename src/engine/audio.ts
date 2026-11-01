@@ -3,6 +3,10 @@
  * Speech uses recorded clips where scripts/voice made them, else the device voice.
  * iOS only lets audio start inside a user gesture, so main.ts calls unlockAudio()
  * on every tap (it is a no-op once running).
+ *
+ * iOS puts Web Audio on the ringer channel, so a muted iPad plays nothing. Safari 17+
+ * can opt out with navigator.audioSession; older versions (an iPad Air 2 stops at
+ * iPadOS 15) get a looping silent <audio>, which moves the page to the media channel.
  */
 import { load, save } from './storage';
 import { getLang, type Lang, speechLang } from '../i18n';
@@ -11,6 +15,46 @@ import { clipKey } from './clipkey';
 let ac: AudioContext | null = null;
 let master: GainNode | null = null;
 let muted = load('muted', false);
+let silence: HTMLAudioElement | null = null;
+
+// iPadOS Safari reports itself as a Mac, so also check for touch.
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+/** A quarter of a second of 8-bit mono silence, at the output rate so iOS doesn't resample. */
+function silentWav(rate: number) {
+  const samples = rate >> 2;
+  const v = new DataView(new ArrayBuffer(44 + samples));
+  const text = (at: number, s: string) => [...s].forEach((c, i) => v.setUint8(at + i, c.charCodeAt(0)));
+  text(0, 'RIFF');
+  v.setUint32(4, 36 + samples, true);
+  text(8, 'WAVEfmt ');
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); // PCM
+  v.setUint16(22, 1, true); // mono
+  v.setUint32(24, rate, true);
+  v.setUint32(28, rate, true); // bytes per second
+  v.setUint16(32, 1, true); // bytes per frame
+  v.setUint16(34, 8, true); // bits per sample
+  text(36, 'data');
+  v.setUint32(40, samples, true);
+  let bin = '';
+  for (let i = 0; i < 44; i++) bin += String.fromCharCode(v.getUint8(i));
+  return 'data:audio/wav;base64,' + btoa(bin + '\x80'.repeat(samples)); // 0x80 is silence in 8-bit PCM
+}
+
+function playSilence(rate: number) {
+  if (!silence) {
+    silence = document.createElement('audio');
+    silence.setAttribute('x-webkit-airplay', 'deny');
+    silence.loop = true;
+    silence.src = silentWav(rate);
+    // Don't leave lock-screen media controls behind; the next tap starts it again.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) silence?.pause();
+    });
+  }
+  if (silence.paused && !document.hidden) silence.play()?.catch(() => {}); // only allowed in some gestures
+}
 
 export function unlockAudio() {
   if (!ac) {
@@ -25,6 +69,7 @@ export function unlockAudio() {
     master.connect(ac.destination);
   }
   if (ac.state !== 'running') ac.resume().catch(() => {});
+  if (isIOS && !muted && !('audioSession' in navigator)) playSilence(ac.sampleRate);
 }
 
 /** Raw audio graph for games that build their own continuous sounds (e.g. engines). */
@@ -40,7 +85,10 @@ export function setMuted(m: boolean) {
   muted = m;
   save('muted', m);
   if (master) master.gain.value = m ? 0 : 0.6;
-  if (m) stopSpeech();
+  if (m) {
+    stopSpeech();
+    silence?.pause(); // lets other apps' music carry on
+  }
 }
 
 function voice(
