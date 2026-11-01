@@ -240,7 +240,27 @@ button {
   font-size: clamp(60px, 10vw, 96px);
   line-height: 1;
   animation: bob 3s ease-in-out infinite;
-  animation-delay: calc(var(--i) * -0.4s);
+  /* Start from rest once cardIn has finished (0.6s + --i * 70ms). */
+  animation-delay: calc(0.7s + var(--i) * 0.23s);
+}
+
+/* Old iPads (no Safari 16 features) stutter through the card-by-card entrance, even
+   without the overshoot or with long-lived layers, so the grid bounces in as one. */
+@supports not (container-type: inline-size) {
+  .card {
+    animation: none;
+  }
+
+  .grid {
+    animation: gridIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  }
+}
+
+@keyframes gridIn {
+  from {
+    transform: translateY(60px) scale(0.9);
+    opacity: 0;
+  }
 }
 
 .card-title {
