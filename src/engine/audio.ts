@@ -1,6 +1,7 @@
 /**
  * Sound effects are synthesized with Web Audio — no files to download, zero latency.
- * Speech uses recorded clips where scripts/voice made them, else the device voice.
+ * Speech uses the device voice on iOS. Elsewhere it uses recorded clips where scripts/voice
+ * made them, else the device voice.
  * iOS only lets audio start inside a user gesture, so main.ts calls unlockAudio()
  * on every tap (it is a no-op once running).
  *
@@ -16,6 +17,7 @@ let ac: AudioContext | null = null;
 let master: GainNode | null = null;
 let muted = load('muted', false);
 let silence: HTMLAudioElement | null = null;
+let speechUnlocked = false;
 
 // iPadOS Safari reports itself as a Mac, so also check for touch.
 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -56,7 +58,17 @@ function playSilence(rate: number) {
   if (silence.paused && !document.hidden) silence.play()?.catch(() => {}); // only allowed in some gestures
 }
 
-export function unlockAudio() {
+/** iOS only speaks from timers once a page has spoken inside a tap, so say nothing in the first one. */
+function unlockSpeech(e?: Event) {
+  if (speechUnlocked || !isIOS || (e?.type !== 'touchend' && e?.type !== 'click')) return;
+  speechUnlocked = true;
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0;
+  window.speechSynthesis.speak(u);
+}
+
+export function unlockAudio(e?: Event) {
+  unlockSpeech(e);
   if (!ac) {
     const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AC) return;
@@ -389,7 +401,8 @@ function speak(text: string) {
 
 // Recorded clips (scripts/voice) for languages that many devices can't speak well:
 // Chrome on Linux, for one, has no Danish voice and reads Danish with an American accent.
-const CLIP_LANGS: Lang[] = ['da'];
+// iPads and iPhones ship good voices for both languages, so they always speak live.
+const CLIP_LANGS: Lang[] = isIOS ? [] : ['da'];
 const clipSets = new Map<Lang, Set<string>>();
 const clipBuffers = new Map<string, Promise<AudioBuffer>>(); // most recently used last
 let clipSrc: AudioBufferSourceNode | null = null;
@@ -422,6 +435,7 @@ function clipBuffer(ctx: AudioContext, url: string) {
 /** Speaks a short phrase in the selected language — helps kids who can't read yet. */
 export function say(text: string) {
   if (muted) return;
+  const interrupting = 'speechSynthesis' in window && (speechSynthesis.speaking || speechSynthesis.pending);
   stopSpeech();
   const id = sayId;
   const lang = getLang();
@@ -448,12 +462,14 @@ export function say(text: string) {
   if (import.meta.env.DEV && !known && clipSets.get(lang)?.size) {
     console.warn(`No recorded ${lang} clip for "${text}". Add it in scripts/voice/phrases.ts and run scripts/voice/build.sh.`);
   }
-  speak(text);
+  // Safari drops an utterance that follows cancel() too closely.
+  if (interrupting) setTimeout(() => id === sayId && speak(text), 80);
+  else speak(text);
 }
 
 export function stopSpeech() {
   sayId++;
   clipSrc?.stop();
   clipSrc = null;
-  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  if ('speechSynthesis' in window && (speechSynthesis.speaking || speechSynthesis.pending)) speechSynthesis.cancel();
 }
