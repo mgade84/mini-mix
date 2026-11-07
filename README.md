@@ -12,6 +12,7 @@ iPad-friendly web games for children aged 4–10. No ads, no network calls, no t
 | 🦖 Dino World | 4+ | 3D dinosaur adventures in two worlds. **Jungle:** pick a T-Rex, Triceratops, Stegosaurus, Brachiosaurus, the super-fast Spinoraptor or a Pteranodon (hold the jump button to fly), bite out of the cage (🦷, 3 bites), smash 10 jeeps, scare 10 visitors and free 4 caged dinosaurs for bonus stars. **Ocean:** pick a Mosasaurus, Plesiosaur or the speedy Ichthyosaur, swim at the surface, hold 🤿 to dive to the seabed, eat 10 fish and scare the tourists off 5 boats |
 | 🚙 Cool Cars | 4+ | Real photos of 12 car models in a 4×3 grid; tap one and it zooms up, revs and says its brand and model |
 | 🍔 Burger Diner | 4–10 | Cook a meal in any order: stack a burger (10 ingredients), slice and fry fries, mix a soda; set the price, pay with coins (with change), then eat it |
+| 🌭 Hotdog House | 4–10 | Make a hotdog (pick a bun and one of five sausages, turn it on the grill, add sauces and toppings), apple slices (cut an apple, tap the slices into a bowl) and a drink (pick a glass bottle, pop the cap with an opener, pour it into a glass); set the price, pay, then eat and drink |
 | 🔷 Shape Sorter | 4+ | Shapes & colors via drag-and-drop (later rounds: shape only) |
 | 🔢 Count It! | 4–6 | Counting 1–10 with spoken numbers and "count together" help |
 | 🃏 Memory Match | 4+ | Memory, 6–24 cards |

@@ -2,7 +2,7 @@ import type { GameDef } from '../../types';
 import { Stage } from '../../engine/stage';
 import { Particles } from '../../engine/particles';
 import { Timers } from '../../engine/util';
-import { type Env, type Meal, newMeal, type Scene, type SceneName } from './core';
+import { drawMeal, type Env, type Meal, newMeal, type Scene, type SceneName } from './core';
 import { hubScene } from './hub';
 import { buildScene } from './build';
 import { friesScene } from './fries';
@@ -15,8 +15,8 @@ const SCENES: Record<SceneName, (env: Env) => Scene> = {
   burger: buildScene,
   fries: friesScene,
   soda: sodaScene,
-  price: priceScene,
-  pay: payScene,
+  price: (env) => priceScene(env, (c, x, base, w, room, t) => drawMeal(c, env.meal, x, base, w, room, t), () => env.go('pay')),
+  pay: (env) => payScene(env, () => env.go('eat')),
   eat: eatScene,
 };
 

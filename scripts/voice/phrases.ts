@@ -20,6 +20,7 @@ import { M as cars } from '../../src/games/cars';
 import { CARS, carSpoken } from '../../src/games/cars/cars';
 import { M as dino } from '../../src/games/dino/strings';
 import { DINOS, SEA_DINOS } from '../../src/games/dino/species';
+import { M as hotdog } from '../../src/games/hotdog/strings';
 
 setLang('da'); // some helpers, like spoken(), read the current language
 
@@ -66,6 +67,13 @@ add(b.eat, b.burgerGone, b.friesGone, b.sodaGone, ...b.yum);
 add(b.price, b.thanks);
 for (const n of range(1, MAX_PRICE)) add(spoken(n), b.pay(n), String(n));
 for (const n of range(1, 19)) add(b.change(n));
+
+// Hotdog House: pickers, grill, dressing, the drink, the apple and eating. Its hub and checkout speak the burger's lines above.
+const h = hotdog.da;
+add(h.pickBread, h.pickSausage, h.grill, h.turn, h.grilled, h.dress, h.full, h.hotdogDone, h.eat, h.gone, ...h.yum);
+add(...Object.values(h.breads), ...Object.values(h.sausages), ...Object.values(h.toppings));
+add(h.pickDrink, h.open, h.lift, h.pour, h.cheers, h.glassEmpty, ...Object.values(h.drinks));
+add(h.snack, h.cutApple, h.intoBowl, h.appleDone, h.appleGone);
 
 const table: Record<string, string> = {};
 for (const text of [...out].sort()) {

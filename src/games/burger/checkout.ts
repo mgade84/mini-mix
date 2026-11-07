@@ -1,13 +1,28 @@
+import type { GameContext } from '../../types';
+import type { Stage } from '../../engine/stage';
+import type { Particles } from '../../engine/particles';
 import { say, sfx } from '../../engine/audio';
-import { clamp, easeOutBack, easeOutCubic, FONT, lerp, roundRect, TAU } from '../../engine/util';
+import { clamp, easeOutBack, easeOutCubic, FONT, lerp, roundRect, TAU, type Timers } from '../../engine/util';
 import { changeCoins, COINS, coinRadius, drawCoin, Kitchen } from './art';
-import { Btn, drawMeal, drawTray, type Env, prompt, type Scene } from './core';
+import { Btn, drawTray, prompt, type Scene } from './core';
 import { money, S, spoken } from './strings';
 
 export const MAX_PRICE = 50;
 
+/** What the checkout needs from a food game. Burger Diner and Hotdog House share it. */
+export interface Till {
+  stage: Stage;
+  fx: Particles;
+  timers: Timers;
+  ctx: GameContext;
+  readonly meal: { price: number };
+}
+
+/** Draws the finished food standing on `base`, centered on x, at most w wide and `room` tall. */
+export type DrawFood = (c: CanvasRenderingContext2D, x: number, base: number, w: number, room: number, t: number) => void;
+
 /** Set the price of the meal on a swinging price tag. */
-export function priceScene(env: Env): Scene {
+export function priceScene(env: Till, food: DrawFood, next: () => void): Scene {
   const { ctx, stage, meal, timers } = env;
   const kitchen = new Kitchen();
   const minus = new Btn('−', '#ff5d8f');
@@ -67,7 +82,7 @@ export function priceScene(env: Env): Scene {
       const W = stage.width;
       prompt(c, S().price, W / 2, ctx.topInset + 28, W - 40);
       drawTray(c, tray.x, tray.y, tray.w, tray.h);
-      drawMeal(c, meal, tray.x, tray.y + 8, tray.w, tray.y + 8 - ctx.topInset - 64, t);
+      food(c, tray.x, tray.y + 8, tray.w, tray.y + 8 - ctx.topInset - 64, t);
 
       // Price tag on a string
       const a = Math.sin(t * 9) * swing * 0.12;
@@ -122,7 +137,7 @@ export function priceScene(env: Env): Scene {
         done = true;
         meal.price = price;
         sfx.good();
-        timers.after(0.3, () => env.go('pay'));
+        timers.after(0.3, next);
       }
     },
 
@@ -137,7 +152,7 @@ export function priceScene(env: Env): Scene {
 interface Flying { v: number; x0: number; y0: number; x1: number; y1: number; t: number; dur: number; kind: 'in' | 'back' | 'change'; }
 
 /** Feed coins into the cash register until the meal is paid for. */
-export function payScene(env: Env): Scene {
+export function payScene(env: Till, next: () => void): Scene {
   const { ctx, stage, meal, fx, timers } = env;
   const kitchen = new Kitchen();
   const price = meal.price;
@@ -195,7 +210,7 @@ export function payScene(env: Env): Scene {
       ctx.addStars(1);
       fx.burst(reg.x, reg.y + reg.h * 0.3, { count: 50, kind: 'confetti', speed: 600, size: 14, gravity: 700, life: 1.5 });
       timers.after(0.5, () => say(S().thanks));
-      timers.after(2.8, () => env.go('eat'));
+      timers.after(2.8, next);
     });
   }
 

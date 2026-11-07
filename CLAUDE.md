@@ -41,6 +41,7 @@ The project has no test suite and no linter. `npm run typecheck` is the main cor
   The hot render path should not allocate per frame.
 - **Multi-file games** keep each game in its own folder:
   - `burger/` is a scene machine. `index.ts` owns the Stage, Particles and Timers and switches between `Scene` objects from `core.ts` (hub, build, fries, soda, price, pay, eat) using `go(name)`. Scenes share the current `Meal` through `Env`.
+  - `hotdog/` uses the same scene machine (hub, then bread → sausage → grill → dress for the hotdog, apple for the snack and drink for the bottle; price, pay, eat) and reuses `burger/`'s checkout (`priceScene`/`payScene` take a `Till`, a food drawer and the next step), kitchen, buttons and the checkout's spoken lines.
   - `race/` is the only game that uses Three.js/WebGL. `index.ts` lazy-loads `./game` with dynamic `import()`, so Three.js lands in a separate chunk loaded on demand. Keep any Three.js import out of the eager graph.
 - **Storage** (`engine/storage.ts`): `load`/`save` wrap localStorage with the `minimix:` prefix and swallow errors, so private mode doesn't break anything. Settings and the total star count are stored there.
 - **Offline**: `public/sw.js` is registered only in production builds. Navigations are network-first and other same-origin GETs are cache-first. The service worker only runs over HTTPS or on localhost.

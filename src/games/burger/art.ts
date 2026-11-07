@@ -448,6 +448,35 @@ export function drawCarton(c: CanvasRenderingContext2D, cx: number, bottom: numb
   }
 }
 
+/** A kitchen knife, blade tip near (x, y + s·0.2), s tall. */
+export function drawKnife(c: CanvasRenderingContext2D, x: number, y: number, s: number) {
+  c.save();
+  c.translate(x, y);
+  c.fillStyle = 'rgba(0,0,0,0.12)';
+  c.fillRect(-s * 0.05 + 8, -s * 0.9 + 8, s * 0.12, s * 0.9);
+  c.beginPath();
+  c.moveTo(-s * 0.05, -s * 0.55);
+  c.lineTo(s * 0.07, -s * 0.55);
+  c.lineTo(s * 0.07, s * 0.05);
+  c.quadraticCurveTo(s * 0.06, s * 0.15, -s * 0.05, s * 0.2);
+  c.closePath();
+  const g = c.createLinearGradient(-s * 0.05, 0, s * 0.07, 0);
+  g.addColorStop(0, '#f5f7fa');
+  g.addColorStop(1, '#9aa6b5');
+  c.fillStyle = g;
+  c.fill();
+  roundRect(c, -s * 0.06, -s * 0.95, s * 0.14, s * 0.42, s * 0.05);
+  c.fillStyle = '#3b2a1e';
+  c.fill();
+  c.fillStyle = '#c9b29b';
+  for (const k of [0.25, 0.55, 0.8]) {
+    c.beginPath();
+    c.arc(s * 0.01, -s * 0.95 + s * 0.42 * k, s * 0.018, 0, TAU);
+    c.fill();
+  }
+  c.restore();
+}
+
 // ---------- Soda ----------
 
 export interface Drink { color: string; amt: number; }
