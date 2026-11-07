@@ -7,11 +7,9 @@ import { counting } from './counting';
 import { piano } from './piano';
 import { math } from './math';
 import { train } from './train';
-import { race } from './race';
 import { burger } from './burger';
 import { hotdog } from './hotdog';
 import { cars } from './cars';
-import { dino } from './dino';
 
 /** Menu order. To add a game: create a GameDef module and list it here. */
-export const games: GameDef[] = [bubbles, paint, piano, train, race, dino, cars, burger, hotdog, shapes, counting, memory, math];
+export const games: GameDef[] = [bubbles, paint, piano, train, cars, burger, hotdog, shapes, counting, memory, math];

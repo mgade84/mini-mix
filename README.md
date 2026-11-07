@@ -8,8 +8,6 @@ iPad-friendly web games for children aged 4–10. No ads, no network calls, no t
 | 🎨 Magic Paint | 4+ | Free drawing: crayon, rainbow, glitter, stamps, eraser, save/share |
 | 🎹 Animal Piano | 4+ | Music: 8 keys, 3 instruments, slide for glissando, demo song |
 | 🚂 Choo-Choo Train | 4+ | Drive with a speed lever, auto-stop at stations, load cargo to continue, horn |
-| 🏎️ Grand Prix | 5+ | Realistic 3D first-person racing: pick a car, 2-lap race vs 3 rivals, optional driving assist |
-| 🦖 Dino World | 4+ | 3D dinosaur adventures in two worlds. **Jungle:** pick a T-Rex, Triceratops, Stegosaurus, Brachiosaurus, the super-fast Spinoraptor or a Pteranodon (hold the jump button to fly), bite out of the cage (🦷, 3 bites), smash 10 jeeps, scare 10 visitors and free 4 caged dinosaurs for bonus stars. **Ocean:** pick a Mosasaurus, Plesiosaur or the speedy Ichthyosaur, swim at the surface, hold 🤿 to dive to the seabed, eat 10 fish and scare the tourists off 5 boats |
 | 🚙 Cool Cars | 4+ | Real photos of 12 car models in a 4×3 grid; tap one and it zooms up, revs and says its brand and model |
 | 🍔 Burger Diner | 4–10 | Cook a meal in any order: stack a burger (10 ingredients), slice and fry fries, mix a soda; set the price, pay with coins (with change), then eat it |
 | 🌭 Hotdog House | 4–10 | Make a hotdog (pick a bun and one of five sausages, turn it on the grill, add sauces and toppings), apple slices (cut an apple, tap the slices into a bowl) and a drink (pick a glass bottle, pop the cap with an opener, pour it into a glass); set the price, pay, then eat and drink |
@@ -17,6 +15,8 @@ iPad-friendly web games for children aged 4–10. No ads, no network calls, no t
 | 🔢 Count It! | 4–6 | Counting 1–10 with spoken numbers and "count together" help |
 | 🃏 Memory Match | 4+ | Memory, 6–24 cards |
 | 🎈 Balloon Math | 6–10 | Addition, subtraction, multiplication & division |
+
+The 3D games Grand Prix and Dino World moved to their own repos, [grand-prix](https://github.com/mgade84/grand-prix) and [dino-world](https://github.com/mgade84/dino-world).
 
 Games speak short prompts (Web Speech API) so non-readers can play.
 
@@ -53,11 +53,9 @@ After changing `package.json`: `docker compose --profile dev up --build -V`.
   - `sprites.ts` – offscreen sprite cache; emoji, gradients and shapes are rendered once and blitted.
   - `particles.ts` – pooled particle system (no allocations per frame).
   - `audio.ts` – all sound effects synthesized with Web Audio (no audio files), iOS unlock handling, speech (recorded clips where available, else the Web Speech API).
-- **Dino World** also uses Three.js, loaded on demand (`src/games/dino/`): a world picker (`index.ts`) loads the jungle (`game.ts`, `world.ts`) or the ocean (`sea.ts`, `seaworld.ts`); procedural low-poly dinosaurs with a shared walk/roar rig, an instanced jungle (one draw call per plant kind) with grid-based collisions, and a third-person chase camera.
-- **Grand Prix** uses Three.js (WebGL), loaded only when the game is opened (`src/games/race/`): procedural track, car models and cockpit, synthesized engine sound (rpm-driven oscillators + gearbox), arcade physics with optional steering/brake assist, AI opponents with rubber-banding.
 - Menu/HUD/overlays are plain DOM with transform/opacity-only CSS animations (GPU-composited).
 - iPad specifics: `touch-action: none`, pinch/double-tap zoom and long-press menus disabled, safe-area insets, opaque canvases, fullscreen PWA manifest + icons.
-- Core app is ~22 KB gzipped JS; the race game adds a ~160 KB chunk on demand.
+- Core app is ~22 KB gzipped JS.
 
 ## Translations
 

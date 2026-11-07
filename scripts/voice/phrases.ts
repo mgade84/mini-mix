@@ -13,13 +13,10 @@ import { M as memory, ANIMALS } from '../../src/games/memory';
 import { M as shapes, SHAPES } from '../../src/games/shapes';
 import { M as math } from '../../src/games/math';
 import { M as train, STATIONS } from '../../src/games/train';
-import { M as race } from '../../src/games/race/strings';
 import { M as burger, spoken } from '../../src/games/burger/strings';
 import { MAX_PRICE } from '../../src/games/burger/checkout';
 import { M as cars } from '../../src/games/cars';
 import { CARS, carSpoken } from '../../src/games/cars/cars';
-import { M as dino } from '../../src/games/dino/strings';
-import { DINOS, SEA_DINOS } from '../../src/games/dino/species';
 import { M as hotdog } from '../../src/games/hotdog/strings';
 
 setLang('da'); // some helpers, like spoken(), read the current language
@@ -48,15 +45,6 @@ add(t.loadFirst, t.waitDelivery, t.allAboard, t.welcome + t.loadCargo, t.loadCar
 for (const st of STATIONS) add(`${st.name.da}!`, `${st.name.da}! ${t.loadCargo}`);
 
 add(...CARS.map((c) => carSpoken(c).da));
-
-// Dino World: picker, dinosaur names, the cage escape, freeing the others and the finale.
-add(dino.da.pick, dino.da.escapeHint, dino.da.escaped, dino.da.done, ...DINOS.map((d) => d.name.da));
-add(...DINOS.map((d) => dino.da.freed(d.name.da)));
-add(dino.da.flyHint);
-// Dino World's ocean.
-add(dino.da.mapPick, dino.da.seaHint, ...SEA_DINOS.map((d) => d.name.da));
-
-add(race.da.win, ...range(2, 4).map(race.da.finished)); // 1st place says win
 
 // Burger Diner. Coins are 1–20, so the running total stays below the price and change is at most 19.
 const b = burger.da;

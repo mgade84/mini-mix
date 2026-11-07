@@ -12,6 +12,5 @@ export default defineConfig({
   },
   preview: { host: true, port: 4173, allowedHosts: ['.local'] },
   // iPadOS 14+ Safari
-  // Three.js (race game) is a lazily loaded ~600 kB chunk; that's expected.
-  build: { target: ['es2020', 'safari14'], chunkSizeWarningLimit: 700 },
+  build: { target: ['es2020', 'safari14'] },
 });
